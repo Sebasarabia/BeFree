@@ -6,6 +6,10 @@ import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplet
 import Constants from 'expo-constants';
 console.log('GOOGLE KEY:', Constants.expoConfig?.extra?.googlePlacesApiKey);
 
+const GOOGLE_KEY =
+  Constants.expoConfig?.extra?.googlePlacesApiKey ||
+  process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
+
 
 import newsReports from '../utils/newsReports';
 import { HeatmapSettingsContext } from '../App';
@@ -31,6 +35,9 @@ export default function MapScreen() {
       <GooglePlacesAutocomplete
         placeholder="Buscar ubicación"
         fetchDetails
+        minLength={2}
+        predefinedPlaces={[]}                 // evita el bug del filter
+        onFail={err => console.warn('Places API:', err)}
         onPress={(data, details = null) => {
           if (!details) return;
           const { lat, lng } = details.geometry.location;
@@ -39,11 +46,20 @@ export default function MapScreen() {
             zoom: 14,
           });
         }}
-        query={{
-          key: Constants.expoConfig.extra.googlePlacesApiKey,
-          language: 'es',
-          components: 'country:bo', // limita a Bolivia
+        /** ------------- clave del fix ------------- **/
+        textInputProps={{
+          // aunque no necesites onFocus, entrega un objeto
+          // y coloca aquí cualquier ajuste extra del TextInput
+          onFocus: () => { },
+          returnKeyType: 'search',
+          clearButtonMode: 'while-editing',
         }}
+        query={{
+          key: GOOGLE_KEY,
+          language: 'es',
+          components: 'country:bo',
+        }}
+        enablePoweredByContainer={false}
         styles={{
           container: {
             position: 'absolute',
@@ -67,7 +83,12 @@ export default function MapScreen() {
           longitudeDelta: 0.2,
         }}
       >
-        <Heatmap points={newsReports} gradient={gradient} />
+        {Array.isArray(newsReports) && newsReports.length > 0 && (
+          <Heatmap
+            points={newsReports}
+            gradient={gradient}
+          />
+        )}
       </MapView>
     </View>
   );

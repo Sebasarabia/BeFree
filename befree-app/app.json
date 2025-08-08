@@ -7,25 +7,43 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+
+    /* ---- iOS --------------------------------------------------------- */
     "ios": {
       "supportsTablet": true,
-      "config": { "googleMapsApiKey": "YOUR_IOS_KEY" }
+      "config": {
+        "googleMapsApiKey": "YOUR_IOS_GOOGLE_MAPS_KEY"
+      }
     },
+
+    /* ---- Android ----------------------------------------------------- */
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff",
-        "config": { "googleMaps": { "apiKey": "AIzaSyCcFrALuExY9ldm2oesfdr9sQUaf5IY8-A" } }
+        "backgroundColor": "#ffffff"
+      },
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDbfkiosjTvQ7kF4sxqsH8TxgIS-w88BYU"
+        }
       },
       "edgeToEdgeEnabled": true
     },
+
+    /* ---- Web --------------------------------------------------------- */
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+
+    /* ---- Claves compartidas ----------------------------------------- */
+    "extra": {
+      "googlePlacesApiKey": "YOUR_PLACES_KEY"
     }
   }
 }
