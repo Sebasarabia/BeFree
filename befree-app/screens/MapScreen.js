@@ -1,45 +1,70 @@
-// screens/MapScreen.js
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
-import HeatmapOverlay from '../components/HeatmapOverlay';
-import { newsReports } from '../utils/newsReports';
+// ---- screens/MapScreen.js ---------------------------------------------
+import React, { useContext, useRef } from 'react';
+import { View, StyleSheet } from 'react-native';
+import MapView, { Heatmap } from 'react-native-maps';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 
-// Dynamic imports:
-const isWeb = Platform.OS === 'web';
-const MapView = isWeb
-  ? require('../components/MapViewWeb').default
-  : require('react-native-maps').default;
-const PROVIDER_GOOGLE = isWeb
-  ? undefined
-  : require('react-native-maps').PROVIDER_GOOGLE;
-// HeatmapOverlay wraps react-native-maps’ Heatmap, so on web it'll render nothing.
+import newsReports from '../utils/newsReports';
+import { HeatmapSettingsContext } from '../App';
 
 export default function MapScreen() {
-  const [region] = useState({
-    latitude: -17.7833,
-    longitude: -63.1821,
-    latitudeDelta: 0.05,
-    longitudeDelta: 0.05,
-  });
-  const [points, setPoints] = useState([]);
+  const { opacity } = useContext(HeatmapSettingsContext);
+  const mapRef = useRef(null);
 
-  useEffect(() => {
-    const mapped = newsReports.map(r => ({
-      latitude: r.latitude,
-      longitude: r.longitude,
-      weight: r.severity,
-    }));
-    setPoints(mapped);
-  }, []);
+  // Genera un gradiente con alfa variable
+  const gradient = {
+    colors: [
+      `rgba(0,255,0,${opacity})`,
+      `rgba(255,255,0,${opacity})`,
+      `rgba(255,0,0,${opacity})`,
+    ],
+    startPoints: [0.2, 0.5, 0.9],
+    colorMapSize: 256,
+  };
 
   return (
     <View style={styles.container}>
+      {/* Barra de búsqueda superior */}
+      <GooglePlacesAutocomplete
+        placeholder="Buscar ubicación"
+        fetchDetails
+        onPress={(data, details = null) => {
+          if (!details) return;
+          const { lat, lng } = details.geometry.location;
+          mapRef.current?.animateCamera({
+            center: { latitude: lat, longitude: lng },
+            zoom: 14,
+          });
+        }}
+        query={{
+          key: process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY,
+          language: 'es',
+          components: 'country:bo', // limita a Bolivia
+        }}
+        styles={{
+          container: {
+            position: 'absolute',
+            top: 40,
+            width: '90%',
+            alignSelf: 'center',
+            zIndex: 10,
+          },
+          listView: { backgroundColor: 'white' },
+        }}
+      />
+
+      {/* Mapa con heatmap */}
       <MapView
-        provider={PROVIDER_GOOGLE}
+        ref={mapRef}
         style={styles.map}
-        initialRegion={region}
+        initialRegion={{
+          latitude: -17.789, // centro SCZ
+          longitude: -63.182,
+          latitudeDelta: 0.2,
+          longitudeDelta: 0.2,
+        }}
       >
-        {!isWeb && <HeatmapOverlay points={points} />}
+        <Heatmap points={newsReports} gradient={gradient} />
       </MapView>
     </View>
   );
