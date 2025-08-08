@@ -1,24 +1,22 @@
-// ---- screens/MapScreen.js ---------------------------------------------
+// screens/MapScreen.js
 import React, { useContext, useRef } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform, Text } from 'react-native';
 import MapView, { Heatmap } from 'react-native-maps';
-import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import PlacesMini from '../components/PlacesMini';
+
+import SafePlacesInput from '../components/SafePlacesInput';
 import Constants from 'expo-constants';
-console.log('GOOGLE KEY:', Constants.expoConfig?.extra?.googlePlacesApiKey);
 
-const GOOGLE_KEY =
-  Constants.expoConfig?.extra?.googlePlacesApiKey ||
-  process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
-
-
-import newsReports from '../utils/newsReports';
 import { HeatmapSettingsContext } from '../App';
+import newsReportsRaw from '../utils/newsReports';
 
 export default function MapScreen() {
+  /* ---------- contexto & datos ---------- */
   const { opacity } = useContext(HeatmapSettingsContext);
   const mapRef = useRef(null);
+  const points = Array.isArray(newsReportsRaw) ? newsReportsRaw : [];
 
-  // Genera un gradiente con alfa variable
+  /* ---------- gradiente ---------- */
   const gradient = {
     colors: [
       `rgba(0,255,0,${opacity})`,
@@ -29,66 +27,51 @@ export default function MapScreen() {
     colorMapSize: 256,
   };
 
+  /* ---------- helper seguro ---------- */
+  const goTo = (lat, lng) => {
+    if (!mapRef.current) return;
+    if (Platform.OS === 'android') {
+      mapRef.current.animateToRegion(
+        { latitude: lat, longitude: lng, latitudeDelta: 0.05, longitudeDelta: 0.05 },
+        700           // duración NUMÉRICA ⇒ evita sendRequest crash
+      );
+    } else {
+      mapRef.current.animateCamera(
+        { center: { latitude: lat, longitude: lng }, zoom: 14 },
+        { duration: 700 }
+      );
+    }
+  };
+
+  /* ---------- clave de Places ---------- */
+  const GOOGLE_KEY =
+    Constants.expoConfig?.extra?.googlePlacesApiKey ||
+    process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
+
   return (
     <View style={styles.container}>
-      {/* Barra de búsqueda superior */}
-      <GooglePlacesAutocomplete
-        placeholder="Buscar ubicación"
-        fetchDetails
-        minLength={2}
-        predefinedPlaces={[]}                 // evita el bug del filter
-        onFail={err => console.warn('Places API:', err)}
-        onPress={(data, details = null) => {
-          if (!details) return;
-          const { lat, lng } = details.geometry.location;
-          mapRef.current?.animateCamera({
-            center: { latitude: lat, longitude: lng },
-            zoom: 14,
-          });
-        }}
-        /** ------------- clave del fix ------------- **/
-        textInputProps={{
-          // aunque no necesites onFocus, entrega un objeto
-          // y coloca aquí cualquier ajuste extra del TextInput
-          onFocus: () => { },
-          returnKeyType: 'search',
-          clearButtonMode: 'while-editing',
-        }}
-        query={{
-          key: GOOGLE_KEY,
-          language: 'es',
-          components: 'country:bo',
-        }}
-        enablePoweredByContainer={false}
-        styles={{
-          container: {
-            position: 'absolute',
-            top: 40,
-            width: '90%',
-            alignSelf: 'center',
-            zIndex: 10,
-          },
-          listView: { backgroundColor: 'white' },
-        }}
-      />
+      {/* -------- barra de búsqueda -------- */}
+      {GOOGLE_KEY ? (
+        <PlacesMini onSelect={(lat, lng) => goTo(lat, lng)} />
 
-      {/* Mapa con heatmap */}
+      ) : (
+        <Text style={styles.missingKey}>
+          Falta googlePlacesApiKey en app.json o .env
+        </Text>
+      )}
+
+      {/* -------- mapa -------- */}
       <MapView
         ref={mapRef}
         style={styles.map}
         initialRegion={{
-          latitude: -17.789, // centro SCZ
+          latitude: -17.789,
           longitude: -63.182,
           latitudeDelta: 0.2,
           longitudeDelta: 0.2,
         }}
       >
-        {Array.isArray(newsReports) && newsReports.length > 0 && (
-          <Heatmap
-            points={newsReports}
-            gradient={gradient}
-          />
-        )}
+        {points.length > 0 && <Heatmap points={points} gradient={gradient} />}
       </MapView>
     </View>
   );
@@ -97,4 +80,14 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
+  missingKey: {
+    position: 'absolute',
+    top: 45,
+    alignSelf: 'center',
+    backgroundColor: '#fff',
+    padding: 6,
+    borderRadius: 4,
+    elevation: 2,
+    zIndex: 10,
+  },
 });
