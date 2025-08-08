@@ -3,6 +3,9 @@ import React, { useContext, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import MapView, { Heatmap } from 'react-native-maps';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import Constants from 'expo-constants';
+console.log('GOOGLE KEY:', Constants.expoConfig?.extra?.googlePlacesApiKey);
+
 
 import newsReports from '../utils/newsReports';
 import { HeatmapSettingsContext } from '../App';
@@ -37,7 +40,7 @@ export default function MapScreen() {
           });
         }}
         query={{
-          key: process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY,
+          key: Constants.expoConfig.extra.googlePlacesApiKey,
           language: 'es',
           components: 'country:bo', // limita a Bolivia
         }}
