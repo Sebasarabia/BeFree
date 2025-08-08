@@ -2,19 +2,17 @@
 import React, { useContext, useRef } from 'react';
 import { View, StyleSheet, Platform, Text } from 'react-native';
 import MapView, { Heatmap } from 'react-native-maps';
-import PlacesMini from '../components/PlacesMini';
-
-import SafePlacesInput from '../components/SafePlacesInput';
+import { newsReports } from '../utils/newsReports';   // ← import nombrado ✅
+import PlacesMini from '../components/PlacesMini';     // buscador ligero
 import Constants from 'expo-constants';
 
 import { HeatmapSettingsContext } from '../App';
-import newsReportsRaw from '../utils/newsReports';
 
 export default function MapScreen() {
   /* ---------- contexto & datos ---------- */
   const { opacity } = useContext(HeatmapSettingsContext);
   const mapRef = useRef(null);
-  const points = Array.isArray(newsReportsRaw) ? newsReportsRaw : [];
+  const points = Array.isArray(newsReports) ? newsReports : [];
 
   /* ---------- gradiente ---------- */
   const gradient = {
@@ -33,7 +31,7 @@ export default function MapScreen() {
     if (Platform.OS === 'android') {
       mapRef.current.animateToRegion(
         { latitude: lat, longitude: lng, latitudeDelta: 0.05, longitudeDelta: 0.05 },
-        700           // duración NUMÉRICA ⇒ evita sendRequest crash
+        700
       );
     } else {
       mapRef.current.animateCamera(
@@ -53,14 +51,13 @@ export default function MapScreen() {
       {/* -------- barra de búsqueda -------- */}
       {GOOGLE_KEY ? (
         <PlacesMini onSelect={(lat, lng) => goTo(lat, lng)} />
-
       ) : (
         <Text style={styles.missingKey}>
           Falta googlePlacesApiKey en app.json o .env
         </Text>
       )}
 
-      {/* -------- mapa -------- */}
+      {/* ---------------- mapa ---------------- */}
       <MapView
         ref={mapRef}
         style={styles.map}
